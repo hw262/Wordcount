@@ -34,14 +34,16 @@ import org.apache.log4j.Logger;
 public class WordCountRank extends Configured implements Tool {
 
     private static final Logger LOG = Logger.getLogger(WordCount.class);
+    private static final Pattern UNDESIRABLES = Pattern.compile("[(){},.;!+\"?<>%]");
 
     public static void main(String[] args) throws Exception {
-        int res = ToolRunner.run(new WordCount(), args);
+        int res = ToolRunner.run(new WordCountRank(), args);
         System.exit(res);
     }
 
     public int run(String[] args) throws Exception {
-        Job job = Job.getInstance(getConf(), "wordcount");
+        
+        Job job = Job.getInstance(getConf(), "wordcountrank");
         job.setJarByClass(this.getClass());
         // Use TextInputFormat, the default unless job.setInputFormatClass is used
         FileInputFormat.addInputPath(job, new Path(args[0]));
@@ -57,7 +59,6 @@ public class WordCountRank extends Configured implements Tool {
         
         private MapWritable pairs;
         private Text filenameKey;
-        private static final Pattern UNDESIRABLES = Pattern.compile("[(){},.;!+\"?<>%]");
         private final static IntWritable one = new IntWritable(1);
         private Text word = new Text();
         private long numRecords = 0;
