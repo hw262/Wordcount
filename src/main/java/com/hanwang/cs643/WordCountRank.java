@@ -26,6 +26,8 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.mapreduce.InputSplit;
+import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 
 import org.apache.log4j.Logger;
 
@@ -53,6 +55,8 @@ public class WordCountRank extends Configured implements Tool {
 
     public static class Map extends Mapper<LongWritable, Text, Text, IntWritable> {
         
+        private MapWritable pairs;
+        private Text filenameKey;
         private static final Pattern UNDESIRABLES = Pattern.compile("[(){},.;!+\"?<>%]");
         private final static IntWritable one = new IntWritable(1);
         private Text word = new Text();
@@ -61,6 +65,14 @@ public class WordCountRank extends Configured implements Tool {
         private String elements[] = { "education", "politics", "sports", "agriculture" }; 
         private HashSet<String> dict = new HashSet<String>(Arrays.asList(elements));
 
+        @Override
+        protected void setup(Context context) throws IOException,
+        InterruptedException {
+            InputSplit split = context.getInputSplit();
+            Path path = ((FileSplit) split).getPath();
+            filenameKey = new Text(path.toString());
+        }
+        
         public void map(LongWritable offset, Text lineText, Reducer.Context context)
                 throws IOException, InterruptedException {
             String line = lineText.toString();
@@ -71,7 +83,9 @@ public class WordCountRank extends Configured implements Tool {
                 }
                 String cleanWord = UNDESIRABLES.matcher(word.toString()).replaceAll("");
                 if(dict.contains(cleanWord)) {
-                  context.write(new Text(cleanWord), one);
+                     pairs = new MapWritable();
+		            pairs.put(filenameKey, one);
+                  context.write(new Text(cleanWord), pairs);
                 }
             }
         }
